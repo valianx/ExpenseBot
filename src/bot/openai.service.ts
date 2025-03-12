@@ -17,7 +17,7 @@ export class OpenAIService {
   async generateSummaryFromText(sheetData: string): Promise<string> {
     try {
       const prompt = `
-        LOS SIGUIENTES DATOS CORRESPONDEN A GASTOS MENSUALES EN CHILE.
+        LOS SIGUIENTES DATOS CORRESPONDEN A GASTOS MENSUALES EN CHILE.  
         ANALIZA LA INFORMACIÓN Y GENERA UN RESUMEN ESTRUCTURADO DE LA SIGUIENTE FORMA:
         
         1️⃣ RESUMEN GENERAL  
@@ -33,13 +33,12 @@ export class OpenAIService {
                - ALIMENTOS: FERIA, SUPERMERCADO, PANADERÍA  
                - TRANSPORTE: BENCINA, TRANSPORTE PÚBLICO, METRO, MICRO, COLECTIVO  
                - VIVIENDA: ARRIENDO, LUZ, AGUA, GAS, INTERNET  
+               - IMPUESTOS Y SEGUROS: PERMISO DE CIRCULACIÓN, SOAP  
            3.2 CATEGORÍAS NO IMPORTANTES  
                - JUEGOS, ENTRETENIMIENTO, COMPRAS DE LUJO  
 
-        4️⃣ FORMATO CLARO Y ESTRUCTURADO  
-           4.1 NO INCLUYAS RECOMENDACIONES NI CONSEJOS DE AHORRO  
-           4.2 SOLO DEVUELVE EL RESUMEN EN FORMATO LIMPIO  
-        
+        📌 **NO INCLUYAS PUNTO 4️⃣ NI RECOMENDACIONES**. SOLO DEVUELVE EL RESUMEN DE LOS PUNTOS 1️⃣, 2️⃣ Y 3️⃣.  Tamaño  de fuente del punto 1 un poco mas grande que lo demás.
+
         📊 DATOS DE GASTOS EN CHILE:  
         ${sheetData}
       `;
@@ -47,20 +46,13 @@ export class OpenAIService {
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content:
-              'Eres un analista financiero especializado en Chile. Clasifica y resume los gastos con precisión cultural sin hacer recomendaciones.',
-          },
+          { role: 'system', content: 'Eres un analista financiero especializado en Chile. Clasifica y resume los gastos con precisión cultural sin hacer recomendaciones.' },
           { role: 'user', content: prompt },
         ],
         max_tokens: 500,
       });
 
-      return (
-        response.choices[0].message.content?.trim() ??
-        '❌ NO SE PUDO GENERAR EL RESUMEN.'
-      );
+      return response.choices[0].message.content?.trim() ?? '❌ NO SE PUDO GENERAR EL RESUMEN.';
     } catch (error) {
       console.error('❌ ERROR AL GENERAR RESUMEN CON OPENAI:', error);
       return '❌ NO SE PUDO GENERAR EL RESUMEN.';
