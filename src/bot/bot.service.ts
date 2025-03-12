@@ -1,8 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ConfigService } from '@nestjs/config';
-import { BotRepository } from './repository/bot.repository';
-import { Expense } from './entity/Expense';
+import { GoogleSheetsService } from './drive.service';
 
 @Injectable()
 export class BotService implements OnModuleInit {
@@ -10,7 +9,7 @@ export class BotService implements OnModuleInit {
 
   constructor(
     private configService: ConfigService,
-    private readonly botRepo: BotRepository,
+    private googleSheetsService: GoogleSheetsService,
   ) {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
     this.bot = new Telegraf(token);
@@ -47,8 +46,8 @@ export class BotService implements OnModuleInit {
     this.bot.launch();
   }
   private async handleExpenseCommand(ctx, amount, category): Promise<void> {
-    await this.botRepo.save(new Expense(category, amount));
-
+    const date = new Date().toISOString().split('T')[0];
+    await this.googleSheetsService.addExpenseToSheet(amount, category, date);
     ctx.reply(`✅ Gastaste $${amount} en ${category}.`);
   }
 }
