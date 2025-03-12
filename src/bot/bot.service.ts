@@ -14,7 +14,7 @@ export class BotService implements OnModuleInit {
     private googleSheetsService: GoogleSheetsService,
     private openAIService: OpenAIService,
     @Inject(CACHE_MANAGER)
-    private cacheManager: Cache
+    private cacheManager: Cache,
   ) {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
     this.bot = new Telegraf(token);
@@ -43,7 +43,7 @@ export class BotService implements OnModuleInit {
 
     this.bot.command('resumen', async (ctx) => {
       const cache = await this.cacheManager.get('resumen');
-      if(cache){
+      if (cache) {
         ctx.reply(String(cache));
         return;
       }
@@ -53,35 +53,49 @@ export class BotService implements OnModuleInit {
     this.bot.launch();
   }
 
-  private async handleExpenseCommand(ctx, amount, category, user): Promise<void> {
+  private async handleExpenseCommand(
+    ctx,
+    amount,
+    category,
+    user,
+  ): Promise<void> {
     const date = new Date().toISOString().split('T')[0];
-    await this.googleSheetsService.addExpenseToSheet(amount, category, date, user);
+    await this.googleSheetsService.addExpenseToSheet(
+      amount,
+      category,
+      date,
+      user,
+    );
     ctx.reply(`✅ Gastaste $${amount} en ${category}.`);
   }
 
   private async handleSummaryCommand(ctx): Promise<void> {
     try {
       ctx.reply('📊 Generando resumen de gastos...');
-  
+
       const sheetName = `${new Date().toISOString().substring(5, 7)}-${new Date().toISOString().substring(0, 4)}`;
-      
+
       // 📌 Leer los datos directamente de Google Sheets
       const sheetData = await this.googleSheetsService.getSheetData(sheetName);
-  
+
       if (!sheetData) {
         return ctx.reply('❌ No se encontraron datos en la hoja.');
       }
-  
+
       // 📌 Enviar los datos a OpenAI
-      const summary = await this.openAIService.generateSummaryFromText(sheetData);
-  
+      const summary =
+        await this.openAIService.generateSummaryFromText(sheetData);
+
       // 📌 Enviar el resumen al usuario
-      this.cacheManager.set('resumen', `📊 Resumen mensual:\n\n${summary}`, 1000 * 60 * 60 * 24); // Guardar en caché por 24 horas
+      this.cacheManager.set(
+        'resumen',
+        `📊 Resumen mensual:\n\n${summary}`,
+        1000 * 60 * 60 * 24,
+      ); // Guardar en caché por 24 horas
       ctx.reply(`📊 Resumen mensual:\n\n${summary}`);
     } catch (error) {
       console.error('❌ Error al generar el resumen:', error);
       ctx.reply('❌ Hubo un problema al generar el resumen.');
     }
   }
-  
 }

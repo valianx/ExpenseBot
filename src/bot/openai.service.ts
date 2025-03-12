@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { readFileSync } from 'fs';
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 
@@ -14,41 +13,57 @@ export class OpenAIService {
       apiKey: process.env.OPENAI_API_KEY,
     });
   }
+
   async generateSummaryFromText(sheetData: string): Promise<string> {
     try {
       const prompt = `
-        Los siguientes datos corresponden a gastos mensuales en Chile. 
-        Analiza la información y genera un resumen con los siguientes puntos:
+        LOS SIGUIENTES DATOS CORRESPONDEN A GASTOS MENSUALES EN CHILE.
+        ANALIZA LA INFORMACIÓN Y GENERA UN RESUMEN ESTRUCTURADO DE LA SIGUIENTE FORMA:
         
-        1️⃣ **Resumen general**: Monto total gastado y las principales categorías de gasto.
-        2️⃣ **Desglose por usuario**: Cuánto gastó cada usuario en total y en qué categorías.
-        3️⃣ **Clasificación de importancia**: Marca cada categoría como "Importante" o "No Importante" según su relevancia en la vida cotidiana en Chile.
-           - **Categorías siempre importantes en Chile**: 
-             - **Alimentos** (Feria, Supermercado, Panadería).
-             - **Transporte** (Bencina, Transporte Público, Metro, Micro, Colectivo).
-             - **Vivienda** (Arriendo, Luz, Agua, Gas, Internet).
-           - **Categorías posiblemente no importantes**: Juegos, Entretenimiento, Compras de lujo.
-        4️⃣ **Formato claro y estructurado**, sin agregar recomendaciones ni consejos de ahorro.
-  
-        Datos de gastos en Chile:
+        1️⃣ RESUMEN GENERAL  
+           1.1 MONTO TOTAL GASTADO  
+           1.2 PRINCIPALES CATEGORÍAS DE GASTO  
+
+        2️⃣ DESGLOSE POR USUARIO  
+           2.1 TOTAL GASTADO POR CADA USUARIO  
+           2.2 CATEGORÍAS EN LAS QUE CADA USUARIO GASTÓ  
+
+        3️⃣ CLASIFICACIÓN DE IMPORTANCIA  
+           3.1 CATEGORÍAS IMPORTANTES EN CHILE  
+               - ALIMENTOS: FERIA, SUPERMERCADO, PANADERÍA  
+               - TRANSPORTE: BENCINA, TRANSPORTE PÚBLICO, METRO, MICRO, COLECTIVO  
+               - VIVIENDA: ARRIENDO, LUZ, AGUA, GAS, INTERNET  
+           3.2 CATEGORÍAS NO IMPORTANTES  
+               - JUEGOS, ENTRETENIMIENTO, COMPRAS DE LUJO  
+
+        4️⃣ FORMATO CLARO Y ESTRUCTURADO  
+           4.1 NO INCLUYAS RECOMENDACIONES NI CONSEJOS DE AHORRO  
+           4.2 SOLO DEVUELVE EL RESUMEN EN FORMATO LIMPIO  
+        
+        📊 DATOS DE GASTOS EN CHILE:  
         ${sheetData}
       `;
-  
+
       const response = await this.openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'Eres un analista financiero especializado en Chile. Clasifica y resume los gastos con precisión cultural sin hacer recomendaciones.' },
+          {
+            role: 'system',
+            content:
+              'Eres un analista financiero especializado en Chile. Clasifica y resume los gastos con precisión cultural sin hacer recomendaciones.',
+          },
           { role: 'user', content: prompt },
         ],
         max_tokens: 500,
       });
-  
-      return response.choices[0].message.content?.trim() ?? 'No se pudo generar el resumen.';
+
+      return (
+        response.choices[0].message.content?.trim() ??
+        '❌ NO SE PUDO GENERAR EL RESUMEN.'
+      );
     } catch (error) {
-      console.error('❌ Error al generar resumen con OpenAI:', error);
-      return '❌ No se pudo generar el resumen.';
+      console.error('❌ ERROR AL GENERAR RESUMEN CON OPENAI:', error);
+      return '❌ NO SE PUDO GENERAR EL RESUMEN.';
     }
   }
-  
-  
 }

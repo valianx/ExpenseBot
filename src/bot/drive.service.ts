@@ -63,7 +63,7 @@ export class GoogleSheetsService {
     amount: number,
     category: string,
     date: string,
-    user:string
+    user: string,
   ): Promise<void> {
     const sheetName = `${date.substring(5, 7)}-${date.substring(0, 4)}`;
     await this.createSheetIfNotExists(sheetName);
@@ -87,31 +87,29 @@ export class GoogleSheetsService {
         spreadsheetId: this.spreadsheetId,
         range: `${sheetName}!A:D`, // 🔹 Ahora incluye la columna D (Usuario)
       });
-  
+
       const rows = response.data.values;
       if (!rows || rows.length === 0) {
         return 'No hay datos en la hoja.';
       }
-  
+
       let formattedData = 'Resumen de gastos:\n\n';
       formattedData += 'Fecha | Monto | Categoría | Usuario\n';
       formattedData += '-------------------------------------------\n';
-      
+
       rows.slice(1).forEach((row) => {
         const date = row[0] || 'Sin fecha';
         const amount = row[1] || '0';
         const category = row[2] || 'Sin categoría';
         const user = row[3] || 'Desconocido';
-  
+
         formattedData += `${date} | ${amount} | ${category} | ${user}\n`;
       });
-  
+
       return formattedData;
     } catch (error) {
       console.error('❌ Error al leer los datos de Google Sheets:', error);
       return '❌ No se pudo obtener la información.';
     }
   }
-  
-  
 }
