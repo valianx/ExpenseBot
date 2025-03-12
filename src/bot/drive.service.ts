@@ -85,31 +85,39 @@ export class GoogleSheetsService {
     try {
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: `${sheetName}!A:D`, // 🔹 Ahora incluye la columna D (Usuario)
+        range: `${sheetName}!A:D`,
       });
 
       const rows = response.data.values;
-      if (!rows || rows.length === 0) {
-        return 'No hay datos en la hoja.';
+      if (!rows || rows.length < 2) {
+        return 'No hay datos disponibles.';
       }
 
-      let formattedData = 'Resumen de gastos:\n\n';
-      formattedData += 'Fecha | Monto | Categoría | Usuario\n';
-      formattedData += '-------------------------------------------\n';
+      let totalGasto = 0;
+      const categoriasTotales: Record<string, number> = {};
+      const usuariosTotales: Record<string, number> = {};
 
-      rows.slice(1).forEach((row) => {
-        const date = row[0] || 'Sin fecha';
-        const amount = row[1] || '0';
-        const category = row[2] || 'Sin categoría';
-        const user = row[3] || 'Desconocido';
+      let formattedData = '';
+      for (const row of rows.slice(1)) {
+        const fecha = row[0] || 'Sin fecha';
+        const monto = parseInt(row[1], 10) || 0;
+        const categoria = row[2]?.toLowerCase() || 'Sin categoría';
+        const usuario = row[3] || 'Desconocido';
 
-        formattedData += `${date} | ${amount} | ${category} | ${user}\n`;
-      });
+        totalGasto += monto;
+        categoriasTotales[categoria] =
+          (categoriasTotales[categoria] || 0) + monto;
+        usuariosTotales[usuario] = (usuariosTotales[usuario] || 0) + monto;
+      }
+
+      formattedData += `TOTAL_GASTO: ${totalGasto} CLP\n`;
+      formattedData += `CATEGORIAS: ${JSON.stringify(categoriasTotales)}\n`;
+      formattedData += `USUARIOS: ${JSON.stringify(usuariosTotales)}\n`;
 
       return formattedData;
     } catch (error) {
-      console.error('❌ Error al leer los datos de Google Sheets:', error);
-      return '❌ No se pudo obtener la información.';
+      console.error('❌ ERROR AL OBTENER DATOS DE GOOGLE SHEETS:', error);
+      return '❌ NO SE PUDO OBTENER LA INFORMACIÓN.';
     }
   }
 }
