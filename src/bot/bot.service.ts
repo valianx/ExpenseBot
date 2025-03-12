@@ -1,8 +1,9 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { ConfigService } from '@nestjs/config';
 import { GoogleSheetsService } from './drive.service';
 import { OpenAIService } from './openai.service';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class BotService implements OnModuleInit {
@@ -12,6 +13,8 @@ export class BotService implements OnModuleInit {
     private configService: ConfigService,
     private googleSheetsService: GoogleSheetsService,
     private openAIService: OpenAIService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache
   ) {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN') ?? '';
     this.bot = new Telegraf(token);
@@ -38,6 +41,11 @@ export class BotService implements OnModuleInit {
     });
 
     this.bot.command('resumen', async (ctx) => {
+      const cache = await this.cacheManager.get('resumen');
+      if(cache){
+        ctx.reply(String(cache));
+        return;
+      }
       await this.handleSummaryCommand(ctx);
     });
 
@@ -67,6 +75,7 @@ export class BotService implements OnModuleInit {
       const summary = await this.openAIService.generateSummaryFromText(sheetData);
   
       // 📌 Enviar el resumen al usuario
+      this.cacheManager.set('resumen', `📊 Resumen mensual:\n\n${summary}`, 1000 * 60 * 60 * 24); // Guardar en caché por 24 horas
       ctx.reply(`📊 Resumen mensual:\n\n${summary}`);
     } catch (error) {
       console.error('❌ Error al generar el resumen:', error);
