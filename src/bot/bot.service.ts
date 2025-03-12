@@ -30,6 +30,7 @@ export class BotService implements OnModuleInit {
     this.bot.command('gasto', (ctx) => {
       const message = ctx.message.text;
       const amount = parseFloat(message.split(' ')[1]);
+      const user = ctx.from.first_name;
 
       if (!amount || isNaN(amount) || amount <= 0) {
         return ctx.reply('⚠️ El monto debe ser un número mayor a 0.');
@@ -37,7 +38,7 @@ export class BotService implements OnModuleInit {
 
       const category = message.split(' en ')[1];
 
-      this.handleExpenseCommand(ctx, amount, category);
+      this.handleExpenseCommand(ctx, amount, category, user);
     });
 
     this.bot.command('resumen', async (ctx) => {
@@ -52,9 +53,9 @@ export class BotService implements OnModuleInit {
     this.bot.launch();
   }
 
-  private async handleExpenseCommand(ctx, amount, category): Promise<void> {
+  private async handleExpenseCommand(ctx, amount, category, user): Promise<void> {
     const date = new Date().toISOString().split('T')[0];
-    await this.googleSheetsService.addExpenseToSheet(amount, category, date);
+    await this.googleSheetsService.addExpenseToSheet(amount, category, date, user);
     ctx.reply(`✅ Gastaste $${amount} en ${category}.`);
   }
 

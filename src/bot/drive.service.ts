@@ -54,7 +54,7 @@ export class GoogleSheetsService {
       range: `${sheetName}!A1:C1`,
       valueInputOption: 'RAW',
       requestBody: {
-        values: [['Fecha', 'Monto', 'Categoría']],
+        values: [['Fecha', 'Monto', 'Categoría', 'Usuario']],
       },
     });
   }
@@ -63,6 +63,7 @@ export class GoogleSheetsService {
     amount: number,
     category: string,
     date: string,
+    user:string
   ): Promise<void> {
     const sheetName = `${date.substring(5, 7)}-${date.substring(0, 4)}`;
     await this.createSheetIfNotExists(sheetName);
@@ -72,7 +73,7 @@ export class GoogleSheetsService {
       range: `${sheetName}!A:C`,
       valueInputOption: 'RAW',
       requestBody: {
-        values: [[date, amount, category]],
+        values: [[date, amount, category, user]],
       },
     });
 
@@ -84,7 +85,7 @@ export class GoogleSheetsService {
     try {
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: `${sheetName}!A:C`,
+        range: `${sheetName}!A:D`, // 🔹 Ahora incluye la columna D (Usuario)
       });
   
       const rows = response.data.values;
@@ -93,11 +94,16 @@ export class GoogleSheetsService {
       }
   
       let formattedData = 'Resumen de gastos:\n\n';
-      formattedData += 'Fecha | Monto | Categoría\n';
-      formattedData += '---------------------------------\n';
+      formattedData += 'Fecha | Monto | Categoría | Usuario\n';
+      formattedData += '-------------------------------------------\n';
       
       rows.slice(1).forEach((row) => {
-        formattedData += `${row[0]} | ${row[1]} | ${row[2]}\n`;
+        const date = row[0] || 'Sin fecha';
+        const amount = row[1] || '0';
+        const category = row[2] || 'Sin categoría';
+        const user = row[3] || 'Desconocido';
+  
+        formattedData += `${date} | ${amount} | ${category} | ${user}\n`;
       });
   
       return formattedData;
@@ -106,5 +112,6 @@ export class GoogleSheetsService {
       return '❌ No se pudo obtener la información.';
     }
   }
+  
   
 }
