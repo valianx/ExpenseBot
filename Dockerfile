@@ -13,6 +13,10 @@ RUN yarn install --frozen-lockfile
 # Copia el resto del código fuente al contenedor
 COPY . .
 
+COPY credentials/key.json /app/credentials/key.json
+
+ENV GOOGLE_CREDENTIALS_PATH=/app/credentials/key.json
+
 # Compila el código TypeScript
 RUN yarn build
 
